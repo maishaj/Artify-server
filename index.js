@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -36,6 +36,8 @@ async function run() {
     //Creating Collection
     const db = client.db("artify_db");
     const usersCollection = db.collection("users");
+    const artworkCollection = db.collection("artworks");
+    const artistCollection = db.collection("artists");
 
     //Adding Users to database
     app.post("/users", async (req, res) => {
@@ -43,6 +45,52 @@ async function run() {
       const result = await usersCollection.insertOne(newUser);
       res.send(result);
     });
+
+    //Adding artworks to database
+    app.post("/artwork", async (req, res) => {
+      const newArt = req.body;
+      const result = await artworkCollection.insertOne(newArt);
+      res.send(result);
+    });
+
+    //Adding artists to database
+    app.post("/artists", async (req, res) => {
+      const newArtist = req.body;
+      const result = await artistCollection.insertOne(newArtist);
+      res.send(result);
+    });
+
+    //Getting 6 artworks by sorting according to likesCount
+    app.get("/artwork", async (req, res) => {
+      const cursor = artworkCollection.find().sort({ likesCount: -1 }).limit(6);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    //Getting all artworks
+    app.get("/exploreArtworks", async (req, res) => {
+      const cursor = artworkCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    //Getting 6 artists
+
+    app.get("/artists", async (req, res) => {
+      const cursor = artistCollection.find().limit(6);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    //getting a specific artwork
+    app.get("/artwork/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await artworkCollection.findOne(query);
+      res.send(result);
+    });
+
+    //
 
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
