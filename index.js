@@ -38,6 +38,7 @@ async function run() {
     const usersCollection = db.collection("users");
     const artworkCollection = db.collection("artworks");
     const artistCollection = db.collection("artists");
+    const favouritesCollection = db.collection("favourites");
 
     //Adding Users to database
     app.post("/users", async (req, res) => {
@@ -74,6 +75,12 @@ async function run() {
       res.send(result);
     });
 
+    app.post("/exploreArtworks", async (req, res) => {
+      const newArt = req.body;
+      const result = await artworkCollection.insertOne(newArt);
+      res.send(result);
+    });
+
     //Getting 6 artists
 
     app.get("/artists", async (req, res) => {
@@ -90,7 +97,37 @@ async function run() {
       res.send(result);
     });
 
-    //
+    //updating artworks collection
+
+    app.patch("/exploreArtworks/like/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await artworkCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $inc: { likesCount: 1 } },
+      );
+      res.send(result);
+    });
+
+    //Search by title or artist
+    app.get("/searchArtworks", async (req, res) => {
+      const searchQuery = req.query.query;
+      console.log(req.query);
+      const cursor = artworkCollection.find({
+        $or: [
+          { title: { $regex: searchQuery, $options: "i" } },
+          { artistName: { $regex: searchQuery, $options: "i" } },
+        ],
+      });
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    //Adding fav content to database
+    app.post("/favourites/:id", async (req, res) => {
+      const newFav = req.body;
+      const result = await favouritesCollection.insertOne(newFav);
+      res.send(result);
+    });
 
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
