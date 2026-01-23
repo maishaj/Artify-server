@@ -141,6 +141,15 @@ async function run() {
       res.send(artworks);
     })
 
+    //deleting favourites from database
+    app.delete("/favourites/:artworkId",async (req,res)=>{
+      const artworkId=req.params.artworkId;
+      const userEmail=req.query.userEmail;
+      const query={artworkId: artworkId, userEmail:userEmail};
+      const result=await favouritesCollection.deleteOne(query);
+      res.send(result);
+    })
+
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
     );
