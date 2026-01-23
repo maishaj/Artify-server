@@ -150,6 +150,33 @@ async function run() {
       res.send(result);
     })
 
+    //deleting artwork from my gallery
+    app.delete("/mygallery/delete/:id", async (req,res)=>{
+      const id=req.params.id;
+      const query={_id: new ObjectId(id)};
+      const result=await artworkCollection.deleteOne(query);
+      res.send(result);
+    })
+
+    //getting users added artwork
+    app.get("/myArtworks",async (req,res)=>{
+       const email=req.query.email;
+       const myArtworks=await artworkCollection.find({userEmail:email}).toArray();
+       res.send(myArtworks);
+    })
+
+    //Updating my artwork
+    app.patch('/myArtworks/update/:id',async (req,res)=>{
+      const id=req.params.id;
+      const updatedFields=req.body;
+      const query={_id: new ObjectId(id)};
+      const update={
+        $set:updatedFields
+      }
+      const result=await artworkCollection.updateOne(query,update);
+      res.send(result);
+    })
+
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
     );
