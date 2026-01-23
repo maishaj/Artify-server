@@ -129,6 +129,18 @@ async function run() {
       res.send(result);
     });
 
+    //getting favourites from database
+    app.get("/favourites",async (req,res)=>{
+      const email=req.query.email;
+      const favourites=await favouritesCollection.find({userEmail:email}).toArray();
+      const artworkIds=favourites.map(fav=>new ObjectId(fav.artworkId));
+
+      const artworks=await artworkCollection.find({
+        _id: {$in: artworkIds}
+      }).toArray();
+      res.send(artworks);
+    })
+
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
     );
