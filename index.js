@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 3000;
@@ -7,7 +8,7 @@ const port = process.env.PORT || 3000;
 //Mongodb
 
 const uri =
-  "mongodb+srv://ArtifyDBUser:vSbwqye54OpPWyYF@cluster0.fjenzci.mongodb.net/?appName=Cluster0";
+  `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.fjenzci.mongodb.net/?appName=Cluster0`;
 
 // Middleware
 
@@ -101,19 +102,19 @@ async function run() {
     app.patch("/exploreArtworks/like/:id", async (req, res) => {
       const id = req.params.id;
       const { userEmail } = req.body;
-      const artwork=await artworkCollection.findOne({
-        _id :new ObjectId(id),
-        likedBy:userEmail
-      })
+      const artwork = await artworkCollection.findOne({
+        _id: new ObjectId(id),
+        likedBy: userEmail,
+      });
       if (artwork) {
-      return res.send({ message: "Already liked" });
+        return res.send({ message: "Already liked" });
       }
       const result = await artworkCollection.updateOne(
         { _id: new ObjectId(id) },
         {
-            $inc: { likesCount: 1 },
-            $push: {likedBy:userEmail}
-        }
+          $inc: { likesCount: 1 },
+          $push: { likedBy: userEmail },
+        },
       );
       res.send(result);
     });
@@ -136,63 +137,69 @@ async function run() {
     app.post("/favourites/:id", async (req, res) => {
       const newFav = req.body;
       const exists = await favouritesCollection.findOne({
-      artworkId: newFav.artworkId,
-      userEmail: newFav.userEmail
-     });
+        artworkId: newFav.artworkId,
+        userEmail: newFav.userEmail,
+      });
 
-    if (exists) {
-      return res.send({ message: "Already in favourites" });
-    }
-    const result = await favouritesCollection.insertOne(newFav);
-    res.send(result);
+      if (exists) {
+        return res.send({ message: "Already in favourites" });
+      }
+      const result = await favouritesCollection.insertOne(newFav);
+      res.send(result);
     });
 
     //getting favourites from database
-    app.get("/favourites",async (req,res)=>{
-      const email=req.query.email;
-      const favourites=await favouritesCollection.find({userEmail:email}).toArray();
-      const artworkIds=favourites.map(fav=>new ObjectId(fav.artworkId));
-      const artworks=await artworkCollection.find({
-        _id: {$in: artworkIds}
-      }).toArray();
+    app.get("/favourites", async (req, res) => {
+      const email = req.query.email;
+      const favourites = await favouritesCollection
+        .find({ userEmail: email })
+        .toArray();
+      const artworkIds = favourites.map((fav) => new ObjectId(fav.artworkId));
+      const artworks = await artworkCollection
+        .find({
+          _id: { $in: artworkIds },
+        })
+        .toArray();
       res.send(artworks);
-    })
+    });
 
     //deleting favourites from database
-    app.delete("/favourites/:artworkId",async (req,res)=>{
-      const artworkId=req.params.artworkId;
-      const userEmail=req.query.userEmail;
-      const query={artworkId: artworkId, userEmail:userEmail};
-      const result=await favouritesCollection.deleteOne(query);
+    app.delete("/favourites/:artworkId", async (req, res) => {
+      const artworkId = req.params.artworkId;
+      const userEmail = req.query.userEmail;
+      const query = { artworkId: artworkId, userEmail: userEmail };
+      const result = await favouritesCollection.deleteOne(query);
       res.send(result);
-    })
+    });
 
     //deleting artwork from my gallery
-    app.delete("/mygallery/delete/:id", async (req,res)=>{
-      const id=req.params.id;
-      const query={_id: new ObjectId(id)};
-      const result=await artworkCollection.deleteOne(query);
+    app.delete("/mygallery/delete/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await artworkCollection.deleteOne(query);
       res.send(result);
-    })
+    });
 
     //getting users added artwork
-    app.get("/myArtworks",async (req,res)=>{
-       const email=req.query.email;
-       const myArtworks=await artworkCollection.find({userEmail:email}).toArray();
-       res.send(myArtworks);
-    })
+    app.get("/myArtworks", async (req, res) => {
+      const email = req.query.email;
+      const myArtworks = await artworkCollection
+        .find({ userEmail: email })
+        .toArray();
+      res.send(myArtworks);
+    });
 
     //Updating my artwork
-    app.patch('/myArtworks/update/:id',async (req,res)=>{
-      const id=req.params.id;
-      const updatedFields=req.body;
-      const query={_id: new ObjectId(id)};
-      const update={
-        $set:updatedFields
-      }
-      const result=await artworkCollection.updateOne(query,update);
+    app.patch("/myArtworks/update/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedFields = req.body;
+      const query = { _id: new ObjectId(id) };
+      const update = {
+        $set: updatedFields,
+      };
+      const result = await artworkCollection.updateOne(query, update);
       res.send(result);
-    })
+    });
 
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
