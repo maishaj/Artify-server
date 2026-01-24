@@ -98,12 +98,22 @@ async function run() {
     });
 
     //updating artworks collection
-
     app.patch("/exploreArtworks/like/:id", async (req, res) => {
       const id = req.params.id;
+      const { userEmail } = req.body;
+      const artwork=await artworkCollection.findOne({
+        _id :new ObjectId(id),
+        likedBy:userEmail
+      })
+      if (artwork) {
+      return res.send({ message: "Already liked" });
+      }
       const result = await artworkCollection.updateOne(
         { _id: new ObjectId(id) },
-        { $inc: { likesCount: 1 } },
+        {
+            $inc: { likesCount: 1 },
+            $push: {likedBy:userEmail}
+        }
       );
       res.send(result);
     });
@@ -125,8 +135,16 @@ async function run() {
     //Adding fav content to database
     app.post("/favourites/:id", async (req, res) => {
       const newFav = req.body;
-      const result = await favouritesCollection.insertOne(newFav);
-      res.send(result);
+      const exists = await favouritesCollection.findOne({
+      artworkId: newFav.artworkId,
+      userEmail: newFav.userEmail
+     });
+
+    if (exists) {
+      return res.send({ message: "Already in favourites" });
+    }
+    const result = await favouritesCollection.insertOne(newFav);
+    res.send(result);
     });
 
     //getting favourites from database
@@ -134,7 +152,6 @@ async function run() {
       const email=req.query.email;
       const favourites=await favouritesCollection.find({userEmail:email}).toArray();
       const artworkIds=favourites.map(fav=>new ObjectId(fav.artworkId));
-
       const artworks=await artworkCollection.find({
         _id: {$in: artworkIds}
       }).toArray();
